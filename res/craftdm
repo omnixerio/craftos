@@ -1,0 +1,21 @@
+#!/bin/bash
+# /usr/bin/craftdm
+# Minimal display manager to launch a Java app
+
+APP_DIR="/usr/share/craftdm"
+APP_JAR="$APP_DIR/craftdm.jar"
+LOG_FILE="/var/log/craftdm.log"
+
+# Ensure X server is running
+if ! pgrep X > /dev/null; then
+    echo "Starting X server..." | tee -a "$LOG_FILE"
+    X :0 &
+    sleep 2
+fi
+
+export DISPLAY=:0
+
+# Run the Java app
+echo "Launching Java app: $APP_JAR" | tee -a "$LOG_FILE"
+cd "$APP_DIR"
+exec java -jar "$APP_JAR"
