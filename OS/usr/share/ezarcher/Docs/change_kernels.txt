@@ -1,0 +1,33 @@
+Change the Kernel in Ezarcher Builds --  Example with linux-zen kernel
+
+1. Change the kernel and headers listed in packages.x86_64
+   Defaults are: linux-lts and linux-lts-headers
+   Change to linux-zen and linux-zen-headers
+2. Change all default references in the folder: grub/ 
+   Defaults are: vmlinuz-linux-lts and initramfs-linux-lts.img
+   In the file grub.cfg, change all references to vmlinuz-linux-zen and initramfs-linux-zen.img
+   In the file loopback.cfg, change all references to vmlinuz-linux-zen and initramfs-linux-zen.img
+3. Change all default references in the bootloader files in the folder: efiboot/loader/entries/
+   Defaults are: vmlinuz-linux-lts and initramfs-linux-lts.img
+   In the file 01-archiso-x86_64-linux.conf, change the references to vmlinuz-linux-zen and initramfs-linux-zen.img
+   In the file 02-archiso-x86_64-linux--nomodeset.conf, change the references to vmlinuz-linux-zen and initramfs-linux-zen.img
+4. Change all default references in the bootloader files in the folder: syslinux/
+   Defaults are: vmlinuz-linux-lts and initramfs-linux-lts.img
+   In the file archiso_sys-linux.cfg, change the references to vmlinuz-linux-zen and initramfs-linux-zen.img
+   In the file archiso_pxe-linux.cfg, change the references to vmlinuz-linux-zen and initramfs-linux-zen.img
+5. Change all default references in the files in the folder: etc/mkinitcpio.d/
+   Defaults are: vmlinuz-linux-lts and initramfs-linux-lts.img
+   In the file ezmkinit, change the references to vmlinuz-linux-zen and initramfs-linux-zen.img
+   In the file linux-lts.preset, change the references to vmlinuz-linux-zen and initramfs-linux-zen.img  
+   ---  Rename this file to linux-zen.preset
+6. Change the default kernel references in the Calamares module config files in the folder: etc/calamares/modules/
+   In the file initcpio.conf, change the kernel to linux-zen
+   In the file shellprocess-mvezmkinit.conf, change the linux-lts.preset reference to linux-zen.preset
+   In the file unpackfs.conf, change both vmlinuz-linux-lts references to vmlinuz-linux-zen
+
+For completeness, change any references in the documentation files.
+
+______
+change_kernels.txt
+# Revision: 2605-1 -- by eznix (https://sourceforge.net/projects/ezarch/)
+# (GNU/General Public License version 3.0)

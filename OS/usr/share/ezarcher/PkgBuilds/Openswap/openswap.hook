@@ -1,0 +1,24 @@
+run_hook ()
+{
+    ## read openswap configurations
+    source /openswap.conf
+
+    ## Optional: To avoid race conditions
+    x=0;
+    while [ ! -b "$keyfile_device" ] && [ $x -le 10 ]; do
+          x=$((x+1))
+          sleep .2
+    done
+    ## End of optional
+
+    if [ "$unlock_method" = "password" ]; then
+      cryptsetup open $cryptsetup_options "$swap_device" "$crypt_swap_name"
+    elif [ "$unlock_method" = "keyfile" ]; then
+      mkdir openswap_keymount
+      mount $keyfile_device_mount_options "$keyfile_device" openswap_keymount
+      cryptsetup open $cryptsetup_options --key-file "openswap_keymount/$keyfile_filename" "$swap_device" "$crypt_swap_name"
+      umount openswap_keymount
+    elif [ "$unlock_method" = "keyfile_raw" ]; then
+      dd "if=$keyfile_device" "bs=$keyfile_length" "skip=$keyfile_block_number" count=1 | cryptsetup open --key-file=- "$swap_device" "$crypt_swap_name"
+    fi
+}

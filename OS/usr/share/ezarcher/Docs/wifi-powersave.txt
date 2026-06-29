@@ -1,0 +1,32 @@
+NetworkManager WiFi Power Saving
+
+If you find that the wifi adapter goes into power saving mode when the system goes 
+to sleep and/or hibernation, the power saving feature of the wifi adapter can be 
+changed by Network Manager configuration files. Here are two examples of files to 
+either disable or enable the wifi-powersave feature.
+
+The first file disables wifi-powersave and the second file enables it. 
+
+wifi-powersave-off.conf
+	# File to be place under /etc/NetworkManager/conf.d
+	# Values are 0 (use default), 1 (ignore/don't touch), 2 (disable) or 3 (enable).
+	[connection]
+	wifi.powersave = 2
+
+wifi-powersave-on.conf
+	# File to be place under /etc/NetworkManager/conf.d
+	# Values are 0 (use default), 1 (ignore/don't touch), 2 (disable) or 3 (enable).
+	[connection]
+	wifi.powersave = 3
+
+Only one of these two files needs to be put in the folder: /etc/NetworkManager/conf.d/
+
+Once you have put the file in the right folder, simply restart NetworkManager:
+
+	sudo systemctl restart NetworkManager
+
+_____
+wifi-powersave.txt
+# Revision: 2605-1 -- by eznix (https://sourceforge.net/projects/ezarch/)
+# (GNU/General Public License version 3.0)
+

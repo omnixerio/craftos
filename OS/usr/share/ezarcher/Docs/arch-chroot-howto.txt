@@ -1,0 +1,46 @@
+Basic Arch Chroot Instructions
+
+Step 1: Boot into the live environment from any current Ezarcher ISO.
+
+    Boot your computer from an Arch Linux live USB or CD
+
+Step 2: Mount your partitions.
+
+   Identify your partitions:
+
+      sudo lsblk -f
+
+   NOTE: Take note of the partitions that contain the root filesystem and the EFI filesystem (if needed). 
+   Other partitions are not typically needed for normal system maintenance.
+
+   Mount the root partition of your installed system to /mnt (adjust /dev/sda2 if needed):
+
+      sudo mount /dev/sda2 /mnt
+
+   If you have a separate boot (or EFI) partition, mount that as well (adjust /mnt/efi if needed):
+
+      sudo mount /dev/sda1 /mnt/efi
+
+   NOTE: If you are using a BTRFS filesystem, you may need to mount subvolumes before chrooting.
+
+Step 3: Chroot into the system.
+
+   Run the arch-chroot command:
+
+        sudo arch-chroot /mnt
+
+   NOTE: This command will change your root directory to the one you specified and set up the necessary virtual filesystems.
+
+Step 4: Perform maintenance.
+
+    Once inside the chroot, you can run commands as if you were on your installed system.
+    You can install or update packages, regenerate your bootloader, fix boot issues, or reset passwords.
+
+Step 5: Exit the chroot.
+
+    When you are finished, exit the chroot environment by typing exit or pressing Ctrl+d.
+
+_____
+arch-chroot-howto.txt
+# Revision: 2605-1 -- by eznix (https://sourceforge.net/projects/ezarch/)
+# (GNU/General Public License version 3.0)

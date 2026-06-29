@@ -24,7 +24,7 @@ out/
 .settings
 .springBeans
 .sts4-cache
-bin/
+/bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
@@ -45,3 +45,6 @@ chroot/
 config/
 /.idea/
 /session.json
+/OS/opt/craft-session/
+/OS/work/
+/OS/ezreleng/

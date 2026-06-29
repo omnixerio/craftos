@@ -1,0 +1,12 @@
+#!/bin/sh
+
+export XDG_SESSION_DESKTOP=CraftSession
+export DESKTOP_SESSION=CraftSession
+export XDG_CURRENT_DESKTOP=CraftSession
+
+APP_DIR="/opt/craft-session"
+APP_EXEC="$APP_DIR/craft-session"
+
+cd "$APP_DIR" || exit 1
+
+exec systemd-cat -t craft-session ./craft-session

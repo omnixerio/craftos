@@ -1,0 +1,52 @@
+Getting started building Calamares:
+
+Depends and make depends for release 3.4.2:
+
+depends=
+  'cryptsetup'
+  'dmidecode'
+  'doxygen'
+  'gptfdisk'
+  'hwinfo'
+  'kconfig'
+  'kcoreaddons'
+  'ki18n'
+  'kparts'
+  'kpmcore'
+  'kservice'
+  'kwidgetsaddons'
+  'libatasmart'
+  'libplasma'
+  'libpwquality'
+  'polkit-qt6'
+  'pybind11'
+  'python'
+  'qt6-declarative'
+  'qt6-svg'
+  'qt6-tools'
+  'qt6-translations'
+  'qt6-virtualkeyboard'
+  'qt6-webengine'
+  'rsync'
+  'solid'
+  'squashfs-tools'
+  'udisks2'
+  'upower'
+  'yaml-cpp'
+
+makedepends=
+  'cmake'
+  'extra-cmake-modules'
+  'gawk'
+  'git'
+  'libglvnd'
+  'ninja'
+  'python-jsonschema'
+  'python-pyaml'
+  'python-unidecode'
+
+_____
+# calamares-dependencies.txt
+# Revision: 2605-1 -- by eznix (https://sourceforge.net/projects/ezarch/)
+# (GNU/General Public License version 3.0)
+

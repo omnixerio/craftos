@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=CraftOS Session
+Comment=CraftOS main desktop
+Exec=/bin/bash /usr/bin/craft-session
+Type=Application
+DesktopNames=CraftSession
