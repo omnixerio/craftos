@@ -27,4 +27,7 @@ file_permissions=(
   ["/usr/local/bin/grubinstall.sh"]="0:0:755"
   ["/usr/local/bin/ezarch.bios"]="0:0:755"
   ["/usr/local/bin/ezarch.uefi"]="0:0:755"
+  ["/usr/bin/craft-session"]="0:0:755"
+  ["/opt/craft-session/craft-session"]="0:0:755"
+  ["/opt/craft-session/jdk/bin/java"]="0:0:755"
 )

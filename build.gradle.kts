@@ -7,15 +7,7 @@ tasks.register<Copy>("copyBin") {
 tasks.register<Copy>("copyCraftSession") {
     description = "Copy resources to OS base"
 
-    dependsOn(":craft-session:packageLinuxX64")
-
-    from(zipTree(project(":craft-session").tasks.named("packageLinuxX64").get().outputs.files.singleFile.resolve("craft-session-linuxX64.zip")))
-    into(file("OS/opt/craft-session"))
-
-    doFirst {
-        delete(fileTree("OS/opt/craft-session"))
-        delete(file("OS/opt/craft-session"))
-    }
+    dependsOn(":craft-session:createSetup")
 }
 
 tasks.register("build") {

@@ -1,7 +1,7 @@
-chmod +x ./gradlew
-chmod +x ./OS/steps.sh
+chmod +x ./gradlew || exit 1
+chmod +x ./OS/steps.sh || exit 1
 
-./gradlew build
+./gradlew build || exit 1
 
-cd OS/
+cd OS/ || exit 1
 sudo ./steps.sh

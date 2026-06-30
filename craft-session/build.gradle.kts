@@ -1,11 +1,15 @@
-
 import io.github.fourlastor.construo.Target
 import io.github.fourlastor.construo.task.jvm.RoastTask
+import io.github.fourlastor.construo.task.jvm.CreateRuntimeImageTask
 import io.github.fourlastor.construo.task.macos.GeneratePlist
+import org.panteleyev.jpackage.ImageType
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 plugins {
     id("java")
     id("io.github.fourlastor.construo") version "2.1.0"
+    id("org.panteleyev.jpackageplugin") version "2.1.0"
 }
 
 group = "dev.ultreon.craftos"
@@ -49,7 +53,7 @@ tasks.test {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "dev.ultreon.craftos.dm.craft-session"
+        attributes["Main-Class"] = "dev.ultreon.craftos.session.CraftSession"
     }
 
     archiveFileName = "craft-session.jar"
@@ -59,24 +63,42 @@ tasks.jar {
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
 }
 
-construo {
-    mainClass = "dev.ultreon.craftos.session.CraftSession"
-    name = "craft-session"
-    version = rootProject.version.toString()
-    humanName = "craft-session"
-    jarTask = "jar"
-    outputDir = file("build/dist")
-    roast.runOnFirstThread = true
-    roast.useZgc = true
-    roast.vmArgs.addAll("-Xmx6g", "-Xms2g", "-Dconstruo=true")
-    jlink.modules.addAll("java.base", "java.scripting", "java.net.http", "java.logging", "java.xml", "java.desktop", "java.sql", "java.management", "java.instrument", "java.compiler", "java.management.rmi", "java.rmi", "java.security.jgss", "java.security.sasl", "java.smartcardio", "jdk.unsupported", "jdk.zipfs", "jdk.jfr")
-    jlink.guessModulesFromJar = false
+tasks.register("createSetup") {
+    description = "Creates OS setup"
 
-    targets {
-        register<Target.Linux>("linuxX64") {
-            this.jdkUrl =
-                "https://cache-redirector.jetbrains.com/intellij-jbr/jbr-25.0.3-linux-x64-b508.4.tar.gz"
-            this.architecture = Target.Architecture.X86_64
-        }
+    val launcher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+
+    doLast {
+        rootProject.file("OS/opt/craft-session/jdk").deleteRecursively()
+        launcher.get().metadata.installationPath.asFile.copyRecursively(
+            rootProject.file("OS/opt/craft-session/jdk")
+        )
+
+        rootProject.file("OS/opt/craft-session/craft-session").delete()
+        rootProject.file("OS/opt/craft-session/craft-session").writeText("""
+            #!/bin/sh
+
+            cd ~/ || exit 1
+            /opt/craft-session/jdk/bin/java -Djdk.lang.Process.launchMechanism=FORK -cp /opt/craft-session/craft-session.jar dev.ultreon.craftos.session.CraftSession
+        """.trimIndent())
+
+        rootProject.file("OS/usr/bin/craft-session").delete()
+        rootProject.file("OS/usr/bin/craft-session").writeText(
+            $$"""
+            #!/bin/sh
+            
+            export XDG_SESSION_DESKTOP=CraftSession
+            export DESKTOP_SESSION=CraftSession
+            export XDG_CURRENT_DESKTOP=CraftSession
+            
+            APP_DIR="/opt/craft-session"
+            APP_EXEC="$APP_DIR/craft-session"
+            
+            cd "$APP_DIR" || exit 1
+            
+            exec systemd-cat -t craft-session "$APP_EXEC"
+        """.trimIndent())
     }
 }

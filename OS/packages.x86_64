@@ -308,6 +308,7 @@ xorg-xhost
 xorg-xinit
 xorg-xwayland
 xorg-server
+xwayland-satellite
 
 # Networking
 avahi
@@ -375,6 +376,7 @@ file-roller
 geany
 ghex
 gnome
+gnome-session
 gnome-dictionary
 gnome-firmware
 gnome-photos
@@ -398,7 +400,7 @@ transmission-gtk
 xdg-desktop-portal-gtk
 
 # Display Manager
-gdm
+sddm
 
 # Calamares make dependencies
 dmidecode
@@ -438,3 +440,6 @@ mkinitcpio-openswap
 # AUR
 downgrade
 trizen
+
+# More
+polkit-kde-agent

@@ -173,8 +173,9 @@ public class CraftSession extends Container implements ApplicationListener {
     private int executeCraftProcess(Path resolve, Path tempDirectory) throws IOException, InterruptedException {
         installMinecraft(mcVersion, alternateDirectory);
 
+        String javaCommand = ProcessHandle.current().info().command().orElse("java");
         ProcessBuilder builder = new ProcessBuilder();
-        builder.command("java", "-jar", resolve.toAbsolutePath().toString(),
+        builder.command(javaCommand, "-Djdk.lang.Process.launchMechanism=FORK", "-jar", resolve.toAbsolutePath().toString(),
                 "client",
                 "-dir",
                 alternateDirectory.getAbsolutePath(),
