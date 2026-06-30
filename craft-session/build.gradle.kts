@@ -16,10 +16,12 @@ group = "dev.ultreon.craftos"
 version = "1.0-SNAPSHOT"
 
 val gdxVersion = "1.13.5"
+val shapedrawerVersion = "2.5.0"
 val log4j2Version = "2.22.1"
 
 repositories {
     mavenCentral()
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -40,11 +42,14 @@ dependencies {
     implementation("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop")
     implementation("com.badlogicgames.gdx:gdx-freetype:$gdxVersion")
     implementation("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop")
+    implementation("space.earlygrey:shapedrawer:${shapedrawerVersion}")
     implementation("dev.3-3:jmccc:3.1.4")
     implementation("dev.3-3:jmccc-microsoft-authenticator:3.1.4")
     implementation("dev.3-3:jmccc-mojang-api:3.1.4")
     implementation("dev.3-3:jmccc-mcdownloader:3.1.4")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.20.0")
+
+    implementation("me.friwi:jcefmaven:146.0.10")
 }
 
 tasks.test {
@@ -65,6 +70,8 @@ tasks.jar {
 
 tasks.register("createSetup") {
     description = "Creates OS setup"
+
+    dependsOn(tasks.jar)
 
     val launcher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(25)
@@ -100,5 +107,8 @@ tasks.register("createSetup") {
             
             exec systemd-cat -t craft-session "$APP_EXEC"
         """.trimIndent())
+
+        rootProject.file("OS/opt/craft-session/craft-session.jar").delete()
+        tasks.jar.get().outputs.files.singleFile.copyTo(rootProject.file("OS/opt/craft-session/craft-session.jar"))
     }
 }

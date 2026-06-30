@@ -9,11 +9,9 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
 import dev.ultreon.craftos.session.gui.Button;
@@ -21,6 +19,9 @@ import dev.ultreon.craftos.session.gui.Container;
 import dev.ultreon.craftos.session.gui.ScrollContainer;
 import jmccc.microsoft.MicrosoftAuthenticator;
 import jmccc.microsoft.entity.MicrosoftSession;
+import me.friwi.jcefmaven.CefInitializationException;
+import me.friwi.jcefmaven.UnsupportedPlatformException;
+import org.lwjgl.glfw.GLFW;
 import org.to2mbn.jmccc.auth.AuthenticationException;
 import org.to2mbn.jmccc.auth.yggdrasil.core.ProfileService;
 import org.to2mbn.jmccc.auth.yggdrasil.core.PropertiesGameProfile;
@@ -41,6 +42,7 @@ import org.to2mbn.jmccc.option.LaunchOption;
 import org.to2mbn.jmccc.option.MinecraftDirectory;
 import org.to2mbn.jmccc.version.Version;
 import org.to2mbn.jmccc.version.parsing.Versions;
+import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +50,9 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,12 +63,9 @@ public class CraftSession extends Container implements ApplicationListener {
     private static Lwjgl3Application app;
     private static CraftSession instance;
     private final Button back;
-    private final List<Button> versionButtons;
     private final MinecraftDownloader minecraftDownloader;
     private final FileHandle sessionFile = new FileHandle(Paths.get(System.getProperty("user.home"), ".minecraft", "msauth.json").toFile());
     private final Cursor cursor;
-    private final Button snapshotFilter;
-    private final Button historicFilter;
     private String launchVersion;
     private ModInfo waylandCraftInfo;
     private ModInfo fabricApiInfo;
@@ -71,6 +73,7 @@ public class CraftSession extends Container implements ApplicationListener {
     private MicrosoftSession session;
 
     private SpriteBatch batch;
+    private ShapeDrawer shapes;
     private Texture white;
     private BitmapFont font;
     private boolean resizing;
@@ -81,13 +84,15 @@ public class CraftSession extends Container implements ApplicationListener {
     private final MinecraftDirectory alternateDirectory = new MinecraftDirectory(Paths.get(System.getProperty("user.home"), ".craftos").toFile());
     private final GlyphLayout layout = new GlyphLayout();
     private Texture skinTexture;
-    private final ScrollContainer versionContainer = new ScrollContainer(this, 20, 60, 100, height - 120);
-    private final List<RemoteVersion> allVersions = new ArrayList<>();
-    private final List<RemoteVersion> versions = new ArrayList<>();
     private boolean filterSnapshots = true;
     private boolean filterHistoric = true;
     private final Button button = new Button(CraftSession.this, "Desktop OS", 140, 40, 100, 20);
     private String mcVersion;
+    private final GridPoint2 size = new GridPoint2();
+    private final GridPoint2 fitSize = new GridPoint2();
+    private Texture backgroundTexture;
+    private final Color color = new Color();
+    private MainFrame mainFrame;
 
     private void run() {
         try {
@@ -104,8 +109,18 @@ public class CraftSession extends Container implements ApplicationListener {
                         session = null;
                         setStatus(microsoftVerification.message);
                         setStatusType(StatusType.WARNING);
+
+                        try {
+                            mainFrame = new MainFrame(microsoftVerification.verificationUri, false, false, new String[0]);
+                        } catch (UnsupportedPlatformException | CefInitializationException | IOException |
+                                 InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        setStatus(microsoftVerification.message + " (use browser)");
                     });
                     String username = auth.auth().getUsername();
+                    mainFrame.dispose();
                     setStatus("Logged in as " + username);
                     setStatusType(StatusType.NORMAL);
 
@@ -123,11 +138,21 @@ public class CraftSession extends Container implements ApplicationListener {
             auth = MicrosoftAuthenticator.login(microsoftVerification -> {
                 setStatus(microsoftVerification.message);
                 setStatusType(StatusType.WARNING);
+
+                try {
+                    mainFrame = new MainFrame(microsoftVerification.verificationUri, false, false, new String[0]);
+                } catch (UnsupportedPlatformException | CefInitializationException | IOException |
+                         InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                setStatus(microsoftVerification.message + " (use browser)");
             });
             session = auth.getSession();
             json.toJson(session, sessionFile);
 
             String username = auth.auth().getUsername();
+            mainFrame.dispose();
             setStatus("Logged in as " + username);
             setStatusType(StatusType.NORMAL);
 
@@ -326,9 +351,7 @@ public class CraftSession extends Container implements ApplicationListener {
     public CraftSession() {
         super(null, 0, 0, 1, 1);
 
-        addChild(versionContainer);
-
-        this.back = addChild(new Button(this, "Exit", 20, height - 40, 100, 20));
+        this.back = addChild(new Button(this, "Log Out Session", 20, height - 40, 100, 20));
         this.back.setCallback(() -> {
             setStatus("Exiting...");
             setStatusType(StatusType.NORMAL);
@@ -336,24 +359,9 @@ public class CraftSession extends Container implements ApplicationListener {
             System.exit(0);
         });
 
-        this.snapshotFilter = addChild(new Button(this, "Snapshots: Hide", 260, height - 40, 100, 20));
-        this.snapshotFilter.setCallback(() -> {
-            this.filterSnapshots = !this.filterSnapshots;
-            this.snapshotFilter.setText(this.filterSnapshots ? "Snapshots: Hide" : "Snapshots: Show");
-            this.addVersions();
-        });
-
-        this.historicFilter = addChild(new Button(this, "Historic: Hide", 380, height - 40, 100, 20));
-        this.historicFilter.setCallback(() -> {
-            this.filterHistoric = !this.filterHistoric;
-            this.historicFilter.setText(this.filterHistoric ? "Historic: Hide" : "Historic: Show");
-            this.addVersions();
-        });
-
         this.width = Gdx.graphics.getWidth() / 2;
         this.height = Gdx.graphics.getHeight() / 2;
 
-        this.versionButtons = new ArrayList<>();
         minecraftDownloader = MinecraftDownloaderBuilder.buildDefault();
 
         try {
@@ -408,6 +416,8 @@ public class CraftSession extends Container implements ApplicationListener {
         this.white = new Texture(pixmap);
         pixmap.dispose();
 
+        shapes = new ShapeDrawer(batch, new TextureRegion(white));
+        backgroundTexture = new Texture("img.png");
         Gdx.graphics.setCursor(cursor);
     }
 
@@ -423,9 +433,6 @@ public class CraftSession extends Container implements ApplicationListener {
         this.height = (int) (height / 2f);
 
         this.back.setBounds(20, 40, 100, 20);
-        this.snapshotFilter.setBounds(260, 40, 100, 20);
-        this.historicFilter.setBounds(380, 40, 100, 20);
-        this.versionContainer.setBounds(20, 80, 100, height / 2 - 120);
     }
 
     @Override
@@ -439,9 +446,44 @@ public class CraftSession extends Container implements ApplicationListener {
             resize(displayMode.width, displayMode.height);
         }
 
+
         batch.begin();
+
+        ScreenUtils.clear(BACKGROUND);
+
+        fill(size.set(width, height), fitSize, backgroundTexture);
+        renderBackgroundImage();
+
+        shapes.filledRectangle(0, 0, width, 100, color.set(0, 0, 0, 0.5f));
+        shapes.filledRectangle(0, height - 60, width, 60, color.set(0, 0, 0, 0.5f));
+
+        shapes.filledRectangle(0, height - 58, width, 2, color.set(1, 1, 1, 0.3f));
+        shapes.filledRectangle(0, 96, width, 2, color.set(1, 1, 1, 0.3f));
+
         render(batch);
         batch.end();
+    }
+
+    private void renderBackgroundImage() {
+        int x = (size.x - fitSize.x) / 2;
+        int y = (size.y - fitSize.y) / 2;
+        batch.draw(backgroundTexture, x, y, fitSize.x, fitSize.y);
+    }
+
+    /**
+     * Computes the fitted size of a background texture to fill the screen area.
+     *
+     * @param size    The screen dimensions.
+     * @param fitSize Output vector receiving the fitted texture dimensions.
+     * @param texture The background texture to fit.
+     */
+    public static void fill(GridPoint2 size, GridPoint2 fitSize, Texture texture) {
+        float scaleX = (float) size.x / texture.getWidth();
+        float scaleY = (float) size.y / texture.getHeight();
+        float scale = Math.max(scaleX, scaleY);
+
+        fitSize.x = (int) (texture.getWidth() * scale);
+        fitSize.y = (int) (texture.getHeight() * scale);
     }
 
     @Override
@@ -495,22 +537,20 @@ public class CraftSession extends Container implements ApplicationListener {
 
     @Override
     public void render(Batch batch) {
-        ScreenUtils.clear(BACKGROUND);
-
         super.render(batch);
 
-        font.setColor(Color.DARK_GRAY);
-        font.draw(batch, "CraftOS Launcher 2025.08.27", 20, 20);
+        font.setColor(color.set(1, 1, 1, 0.5f));
+        font.draw(batch, "CraftOS Launcher 2026.06.30", 20, 20);
 
         if (skinTexture != null) {
             String str = "Logged in as " + auth.auth().getUsername();
             font.setColor(Color.WHITE);
-            font.draw(batch, str, skinTexture != null ? 46 : 20, height - layout.height - 20);
+            font.draw(batch, str, skinTexture != null ? 46 : 20, height - layout.height - 26);
             layout.setText(font, str);
 
-            fill(batch, 21, height - 23 - 10, 18, 18, Color.WHITE);
+            fill(batch, 21, height - 23 - 16, 18, 18, Color.WHITE);
             batch.setColor(Color.WHITE);
-            batch.draw(skinTexture, 22, height - 22 - 10, 16, 16, 8, 8, 8, 8, false, false);
+            batch.draw(skinTexture, 22, height - 22 - 16, 16, 16, 8, 8, 8, 8, false, false);
         }
 
         if (getStatus() != null) {
@@ -522,7 +562,16 @@ public class CraftSession extends Container implements ApplicationListener {
                 case null -> Color.WHITE;
             });
             batch.setColor(1, 1, 1, 1);
-            font.draw(batch, getStatus(), width - layout.width - 20, height - layout.height - 20);
+            font.draw(batch, getStatus(), width - layout.width - 20, height - layout.height - 26);
+        }
+
+        String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM));
+
+        if (dateTime != null) {
+            layout.setText(font, dateTime);
+            font.setColor(color.set(1, 1, 1, 0.5f));
+            batch.setColor(1, 1, 1, 1);
+            font.draw(batch, dateTime, width - layout.width - 20, 20);
         }
     }
 
@@ -564,6 +613,9 @@ public class CraftSession extends Container implements ApplicationListener {
             }, createConfig());
         } catch (Exception e) {
             e.printStackTrace();
+            if (Objects.equals(System.getenv("LIBGL_ALWAYS_SOFTWARE"), "1")) {
+                return;
+            }
             System.err.println("Retrying with LIBGL_ALWAYS_SOFTWARE=1...");
             if (Boolean.getBoolean("construo")) {
                 try {
@@ -602,39 +654,15 @@ public class CraftSession extends Container implements ApplicationListener {
         configuration.setForegroundFPS(60);
         configuration.setIdleFPS(60);
         configuration.useVsync(true);
-        configuration.setTitle("CraftDM");
+        configuration.setTitle("Craft Session");
         configuration.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
+
+        GLFW.glfwWindowHintString(GLFW.GLFW_X11_CLASS_NAME, "dev.ultreon.CraftSession");
 
         return configuration;
     }
 
     private void addVersions() {
-        for (Button b : versionButtons) {
-            versionContainer.removeChild(b);
-        }
-
-        versionButtons.clear();
-
-        for (RemoteVersion version : CraftSession.this.versions) {
-            if (Objects.equals(version.getType(), "snapshot") && filterSnapshots) {
-                continue;
-            }
-            if ((Objects.equals(version.getType(), "old_alpha") || Objects.equals(version.getType(), "old_beta")) && filterHistoric) {
-                continue;
-            }
-            Button button = new Button(CraftSession.this, version.getVersion(), width - 120, height - 60 - versionButtons.size() * 20, 100, 20);
-            button.setCallback(() -> {
-                for (Button b : versionButtons) {
-                    b.disable();
-                }
-
-                setStatus("Downloading version " + version + "...");
-
-                installAndLaunchVersion(version.getVersion(), button);
-            });
-            versionButtons.add(button);
-        }
-
         Gdx.app.postRunnable(() -> {
             button.enable();
             button.setCallback(() -> {
@@ -708,11 +736,6 @@ public class CraftSession extends Container implements ApplicationListener {
                     }
                 });
             });
-
-            for (int i = 0; i < versionButtons.size(); i++) {
-                versionButtons.get(i).setBounds(0, versionContainer.height - 20 - i * 20, 100, 20);
-                versionContainer.addChild(versionButtons.get(i));
-            }
         });
     }
 
@@ -775,10 +798,6 @@ public class CraftSession extends Container implements ApplicationListener {
         public void done(RemoteVersionList versionList) {
             Map<String, RemoteVersion> versions = versionList.getVersions();
             Collection<RemoteVersion> values = versions.values();
-            CraftSession.this.versions.clear();
-            CraftSession.this.versions.addAll(values);
-            CraftSession.this.allVersions.clear();
-            CraftSession.this.allVersions.addAll(values);
             addVersions();
         }
 
@@ -795,6 +814,7 @@ public class CraftSession extends Container implements ApplicationListener {
         }
 
     }
+
     private class LaunchCallback implements CombinedDownloadCallback<Version> {
         private final Button button;
         private final String str;
@@ -810,10 +830,6 @@ public class CraftSession extends Container implements ApplicationListener {
         public void done(Version version) {
             setStatus("Version " + version + " downloaded");
             setStatusType(StatusType.NORMAL);
-
-            for (Button b : versionButtons) {
-                b.enable();
-            }
 
             button.setText(str);
 
@@ -858,10 +874,6 @@ public class CraftSession extends Container implements ApplicationListener {
             setStatus("Failed to download version " + version);
             setStatusType(StatusType.ERROR);
 
-            for (Button b : versionButtons) {
-                b.enable();
-            }
-
             button.setText(str);
         }
 
@@ -869,10 +881,6 @@ public class CraftSession extends Container implements ApplicationListener {
         public void cancelled() {
             setStatus("Version " + version + " download cancelled");
             setStatusType(StatusType.WARNING);
-
-            for (Button b : versionButtons) {
-                b.enable();
-            }
 
             button.setText(str);
         }
@@ -907,6 +915,7 @@ public class CraftSession extends Container implements ApplicationListener {
             };
         }
     }
+
     private class NothingCallback implements CombinedDownloadCallback<Version> {
         private final String version;
         private final Runnable onFail;
