@@ -10,4 +10,3 @@ pluginManagement {
 
 rootProject.name = "craftos"
 include("craft-session")
-include("craftmod")
