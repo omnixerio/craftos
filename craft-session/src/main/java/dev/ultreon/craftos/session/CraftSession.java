@@ -86,7 +86,7 @@ public class CraftSession extends Container implements ApplicationListener {
     private Texture skinTexture;
     private boolean filterSnapshots = true;
     private boolean filterHistoric = true;
-    private final Button button = new Button(CraftSession.this, "Desktop OS", 140, 40, 100, 20);
+    private final Button button = new Button(CraftSession.this, "Desktop", 140, 40, 100, 20);
     private String mcVersion;
     private final GridPoint2 size = new GridPoint2();
     private final GridPoint2 fitSize = new GridPoint2();
