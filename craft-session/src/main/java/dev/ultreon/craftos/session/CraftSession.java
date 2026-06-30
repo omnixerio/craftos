@@ -117,12 +117,7 @@ public class CraftSession extends Container implements ApplicationListener {
                             return;
                         }
 
-                        try {
-                            browserFrame = new BrowserFrame(microsoftVerification.verificationUri);
-                        } catch (UnsupportedPlatformException | CefInitializationException | IOException |
-                                 InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        browserFrame = new BrowserFrame(microsoftVerification.verificationUri);
 
                         setStatus(microsoftVerification.message + " (use browser)");
                     });
