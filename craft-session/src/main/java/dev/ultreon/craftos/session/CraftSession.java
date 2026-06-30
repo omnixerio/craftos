@@ -14,9 +14,11 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
+import dev.ultreon.craftos.session.frames.BrowserFrame;
 import dev.ultreon.craftos.session.gui.Button;
 import dev.ultreon.craftos.session.gui.Container;
-import dev.ultreon.craftos.session.gui.ScrollContainer;
+import dev.ultreon.craftos.session.mods.ModInfo;
+import dev.ultreon.craftos.session.mods.ModUpdateChecker;
 import jmccc.microsoft.MicrosoftAuthenticator;
 import jmccc.microsoft.entity.MicrosoftSession;
 import me.friwi.jcefmaven.CefInitializationException;
@@ -92,7 +94,7 @@ public class CraftSession extends Container implements ApplicationListener {
     private final GridPoint2 fitSize = new GridPoint2();
     private Texture backgroundTexture;
     private final Color color = new Color();
-    private MainFrame mainFrame;
+    private BrowserFrame browserFrame;
 
     private void run() {
         try {
@@ -110,8 +112,13 @@ public class CraftSession extends Container implements ApplicationListener {
                         setStatus(microsoftVerification.message);
                         setStatusType(StatusType.WARNING);
 
+                        if (browserFrame != null) {
+                            setStatus(microsoftVerification.message + " (use browser)");
+                            return;
+                        }
+
                         try {
-                            mainFrame = new MainFrame(microsoftVerification.verificationUri, false, false, new String[0]);
+                            browserFrame = new BrowserFrame(microsoftVerification.verificationUri);
                         } catch (UnsupportedPlatformException | CefInitializationException | IOException |
                                  InterruptedException e) {
                             e.printStackTrace();
@@ -120,7 +127,7 @@ public class CraftSession extends Container implements ApplicationListener {
                         setStatus(microsoftVerification.message + " (use browser)");
                     });
                     String username = auth.auth().getUsername();
-                    mainFrame.dispose();
+                    browserFrame.dispose();
                     setStatus("Logged in as " + username);
                     setStatusType(StatusType.NORMAL);
 
@@ -139,8 +146,13 @@ public class CraftSession extends Container implements ApplicationListener {
                 setStatus(microsoftVerification.message);
                 setStatusType(StatusType.WARNING);
 
+                if (browserFrame != null) {
+                    setStatus(microsoftVerification.message + " (use browser)");
+                    return;
+                }
+
                 try {
-                    mainFrame = new MainFrame(microsoftVerification.verificationUri, false, false, new String[0]);
+                    browserFrame = new BrowserFrame(microsoftVerification.verificationUri);
                 } catch (UnsupportedPlatformException | CefInitializationException | IOException |
                          InterruptedException e) {
                     e.printStackTrace();
@@ -152,7 +164,7 @@ public class CraftSession extends Container implements ApplicationListener {
             json.toJson(session, sessionFile);
 
             String username = auth.auth().getUsername();
-            mainFrame.dispose();
+            browserFrame.dispose();
             setStatus("Logged in as " + username);
             setStatusType(StatusType.NORMAL);
 

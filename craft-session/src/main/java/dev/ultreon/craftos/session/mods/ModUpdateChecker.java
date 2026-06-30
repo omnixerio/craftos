@@ -1,4 +1,4 @@
-package dev.ultreon.craftos.session;
+package dev.ultreon.craftos.session.mods;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,14 +12,6 @@ public class ModUpdateChecker {
 
     private static final HttpClient CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper JSON = new ObjectMapper();
-
-    static void main() throws Exception {
-        ModInfo waylandcraft = checkLatestVersion("waylandcraft");
-        ModInfo fabricApi = checkLatestVersion("fabric-api", waylandcraft.gameVersion());
-
-        System.out.println("waylandcraft = " + waylandcraft);
-        System.out.println("fabricApi = " + fabricApi);
-    }
 
     public static ModInfo checkLatestVersion(String waylandcraft) throws Exception {
         return checkLatestVersion(waylandcraft, null);
