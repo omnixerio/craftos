@@ -16,7 +16,7 @@ public class BrowserFrame extends JFrame {
     private boolean browserFocused = true;
     private boolean cefInstanceDisposed;
 
-    BrowserFrame(String url) {
+    public BrowserFrame(String url) {
         CefAppBuilder builder = new CefAppBuilder();
         builder.getCefSettings().windowless_rendering_enabled = false;
 
